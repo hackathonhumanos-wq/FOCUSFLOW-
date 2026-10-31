@@ -8,40 +8,40 @@ import { apiRouter } from './apps/api/src/routes/index.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function startServer() {
-  const app = express();
-  const PORT = parseInt(process.env.PORT || '3000', 10);
+const app = express();
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
-  // Security & CORS (configured for AI Studio cross-origin iframe embedding)
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginEmbedderPolicy: false,
-      crossOriginOpenerPolicy: false,
-      crossOriginResourcePolicy: false,
-      frameguard: false,
-    })
-  );
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    })
-  );
+// Security & CORS (configured for AI Studio cross-origin iframe embedding & Vercel)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
+    frameguard: false,
+  })
+);
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  })
+);
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-  // Mount FOCUSFLOW Backend API routes (including GET /api/v1/health)
-  app.use('/api', apiRouter);
-  app.use('/api/*', (req, res) => {
-    res.status(404).json({
-      success: false,
-      message: `Cannot ${req.method} ${req.originalUrl}`,
-    });
+// Mount FOCUSFLOW Backend API routes (including GET /api/v1/health)
+app.use('/api', apiRouter);
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Cannot ${req.method} ${req.originalUrl}`,
   });
+});
 
+async function startServer() {
   // Mount Vite development middlewares or static files in production
   const isProduction =
     process.env.NODE_ENV === 'production' || process.env.npm_lifecycle_event === 'start';
@@ -67,11 +67,17 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[FOCUSFLOW] Full-stack server active at http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'development'})`);
+    console.log(
+      `[FOCUSFLOW] Full-stack server active at http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'development'})`
+    );
   });
 }
 
-startServer().catch(err => {
-  console.error('[FOCUSFLOW] Server failed to start:', err);
-  process.exit(1);
-});
+if (!process.env.VERCEL) {
+  startServer().catch(err => {
+    console.error('[FOCUSFLOW] Server failed to start:', err);
+    process.exit(1);
+  });
+}
+
+export default app;
