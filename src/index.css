@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Primary Reference Design Tokens */
+    --color-primary: #079669;
+    --color-primary-dark: #087A54;
+    --color-primary-light: #DDF7EC;
+
+    --color-background: #F8FCFA;
+    --color-surface: #FFFFFF;
+    --color-surface-muted: #F1FAF6;
+
+    --color-text-primary: #142447;
+    --color-text-secondary: #52627D;
+    --color-text-muted: #8290A5;
+
+    --color-border: #DFEBF0;
+
+    --color-blue: #2878F0;
+    --color-purple: #8152E8;
+    --color-orange: #F28A35;
+    --color-danger: #EF4444;
+
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+
+    --shadow-card: 0 4px 18px rgba(25, 70, 80, 0.055);
+    --sidebar-width: 270px;
+
+    /* Semantic Project Aliases */
+    --ff-bg: var(--color-background);
+    --ff-bg-soft: var(--color-surface-muted);
+    --ff-surface: var(--color-surface);
+    --ff-primary: var(--color-primary);
+    --ff-primary-hover: var(--color-primary-dark);
+    --ff-mint: var(--color-primary-light);
+    --ff-navy: var(--color-text-primary);
+    --ff-slate: var(--color-text-secondary);
+    --ff-muted: var(--color-text-muted);
+    --ff-blue: var(--color-blue);
+    --ff-border: var(--color-border);
+    --ff-shadow-card: var(--shadow-card);
+    --ff-shadow-elevated: 0 12px 32px rgba(20, 36, 71, 0.085);
+
+    color-scheme: light;
+  }
+
+  html {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.font-display {
+  font-family: 'Plus Jakarta Sans', 'Bricolage Grotesque', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-mono-numbers,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.ff-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.ff-card-mint {
+  background: linear-gradient(135deg, #EFFBF6 0%, #DCF6EB 100%);
+  border: 1px solid #CBEFE0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Subtle light-theme scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F8F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C7DED5;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CC5B6;
+}
