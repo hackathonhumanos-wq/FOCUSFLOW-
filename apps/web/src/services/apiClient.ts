@@ -50,13 +50,21 @@ import type {
   AutomationRuleInput,
 } from '../../../../packages/validation/src/index.ts';
 
+import { dispatchLocalApiFallback } from './localApiFallback.ts';
+
 interface ApiEnvelope<T> {
   success: boolean;
   message?: string;
   data: T;
 }
 
+let useStaticLocalFallback = false;
+
 function getApiBaseUrl(): string {
+  const configuredBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (configuredBase && configuredBase.trim().length > 0) {
+    return configuredBase.trim().replace(/\/+$/, '');
+  }
   if (typeof window !== 'undefined' && window.location?.origin) {
     return `${window.location.origin}/api/v1`;
   }
@@ -68,9 +76,13 @@ function delay(ms: number): Promise<void> {
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  if (useStaticLocalFallback) {
+    return dispatchLocalApiFallback<T>(endpoint, options);
+  }
+
   const url = `${getApiBaseUrl()}${endpoint}`;
   const method = (options?.method || 'GET').toUpperCase();
-  const maxAttempts = method === 'GET' ? 3 : 2;
+  const maxAttempts = method === 'GET' ? 2 : 1;
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -92,16 +104,51 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
         },
       });
 
+      const contentType = (res.headers.get('content-type') || '').toLowerCase();
+      const vercelError = res.headers.get('x-vercel-error') || '';
+      const isJsonResponse = contentType.includes('application/json');
+
+      // Static CDN / unmounted serverless function returning HTML SPA shell or platform 404/405/502
+      if (
+        !isJsonResponse &&
+        (res.ok ||
+          res.status === 404 ||
+          res.status === 405 ||
+          res.status === 502 ||
+          res.status === 503 ||
+          res.status === 504 ||
+          Boolean(vercelError))
+      ) {
+        useStaticLocalFallback = true;
+        return dispatchLocalApiFallback<T>(endpoint, options);
+      }
+
       if (res.status === 502 || res.status === 503 || res.status === 504) {
         if (attempt < maxAttempts) {
-          await delay(attempt * 350);
+          await delay(attempt * 300);
           continue;
         }
+        useStaticLocalFallback = true;
+        return dispatchLocalApiFallback<T>(endpoint, options);
       }
 
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => ({}))) as { message?: string };
-        throw new Error(errorBody.message || `HTTP ${res.status}: ${res.statusText}`);
+        const errorBody = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          error?: { message?: string };
+        };
+        const apiMessage = errorBody.message || errorBody.error?.message;
+        // If Express returned a real JSON error (validation 400 or domain 404), surface it directly
+        if (apiMessage) {
+          throw new Error(apiMessage);
+        }
+        if (res.status === 404 || res.status === 405) {
+          useStaticLocalFallback = true;
+          return dispatchLocalApiFallback<T>(endpoint, options);
+        }
+        throw new Error(
+          `HTTP ${res.status}${res.statusText ? `: ${res.statusText}` : ''}`
+        );
       }
 
       return (await res.json()) as T;
@@ -110,9 +157,13 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
       const isTransientNetworkError =
         lastError.name === 'TypeError' || /failed to fetch|network/i.test(lastError.message);
 
-      if (isTransientNetworkError && attempt < maxAttempts) {
-        await delay(attempt * 400);
-        continue;
+      if (isTransientNetworkError) {
+        if (attempt < maxAttempts) {
+          await delay(attempt * 300);
+          continue;
+        }
+        useStaticLocalFallback = true;
+        return dispatchLocalApiFallback<T>(endpoint, options);
       }
       throw lastError;
     }

@@ -12,7 +12,9 @@
       "@/*": ["./src/*"]
     },
     "allowImportingTsExtensions": true,
+    "types": ["vite/client"],
     "noEmit": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["dist", "api"]
 }

@@ -14,7 +14,7 @@
     "dev:api": "tsx apps/api/src/index.ts",
     "dev:extension": "tsc -w -p apps/extension",
     "build": "npm run build:vercel-api && vite build",
-    "build:vercel-api": "esbuild apps/api/src/vercel.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
+    "build:vercel-api": "node scripts/build-vercel-api.mjs",
     "build:web": "vite build",
     "build:api": "tsc --noEmit -p apps/api",
     "build:extension": "tsc --noEmit -p apps/extension",

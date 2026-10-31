@@ -2,11 +2,15 @@ import type { Request, Response } from 'express';
 import { HealthService } from '../services/healthService.ts';
 
 export class HealthController {
-  public static checkHealth(req: Request, res: Response): void {
+  public static checkHealth(_req: Request, res: Response): void {
     const health = HealthService.getHealth();
     res.status(200).json({
       success: true,
-      message: 'FOCUSFLOW API is running',
+      message: health.message,
+      data: {
+        status: 'ok',
+        timestamp: health.timestamp || new Date().toISOString(),
+      },
     });
   }
 }
